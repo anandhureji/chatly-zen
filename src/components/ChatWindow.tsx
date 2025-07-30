@@ -4,20 +4,20 @@ import ChatMessage, { Message } from "./ChatMessage";
 import LoadingMessage from "./LoadingMessage";
 import ChatInput from "./ChatInput";
 import { MessageCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const ChatWindow = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  // Auto-scroll to bottom when new messages are added
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
   const sendMessage = async (content: string) => {
-    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
@@ -29,10 +29,13 @@ const ChatWindow = () => {
     setIsLoading(true);
 
     try {
+      const token = localStorage.getItem("token");
+
       const response = await fetch("http://localhost:8080/api/chat/ask", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ question: content }),
       });
@@ -43,7 +46,6 @@ const ChatWindow = () => {
 
       const data = await response.json();
 
-      // Add AI response
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: data.answer || "I'm sorry, I couldn't generate a response.",
@@ -54,8 +56,7 @@ const ChatWindow = () => {
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error sending message:", error);
-      
-      // Add error message
+
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: "Sorry, I'm having trouble connecting right now. Please try again later.",
@@ -64,7 +65,7 @@ const ChatWindow = () => {
       };
 
       setMessages((prev) => [...prev, errorMessage]);
-      
+
       toast({
         title: "Connection Error",
         description: "Unable to reach the chat service. Please check your connection.",
@@ -78,7 +79,7 @@ const ChatWindow = () => {
   return (
     <div className="w-full max-w-4xl mx-auto h-[80vh] bg-chat-window rounded-xl shadow-lg border border-border overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary to-primary-glow p-4 text-primary-foreground">
+      <div className="bg-gradient-to-r from-primary to-primary-glow p-4 text-primary-foreground flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="flex items-center justify-center w-10 h-10 bg-white/20 rounded-full">
             <MessageCircle className="h-5 w-5" />
@@ -87,6 +88,15 @@ const ChatWindow = () => {
             <h1 className="text-lg font-semibold">AI Assistant</h1>
             <p className="text-sm opacity-90">Ask me anything!</p>
           </div>
+        </div>
+
+        <div className="space-x-2">
+          <button
+            onClick={() => navigate("/profile")}
+            className="bg-white/10 hover:bg-white/20 px-4 py-1 rounded text-sm"
+          >
+            Profile
+          </button>
         </div>
       </div>
 
@@ -103,13 +113,13 @@ const ChatWindow = () => {
             </div>
           </div>
         )}
-        
+
         {messages.map((message) => (
           <ChatMessage key={message.id} message={message} />
         ))}
-        
+
         {isLoading && <LoadingMessage />}
-        
+
         <div ref={messagesEndRef} />
       </div>
 
