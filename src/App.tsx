@@ -30,14 +30,7 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<Login />} />
           {/* Retrieve token from localStorage or context */}
-          <Route
-            path="/profile"
-            element={
-              (typeof window !== "undefined" && localStorage.getItem("token"))
-                ? <Profile />
-                : <Navigate to="/" />
-            }
-          />
+          <Route path="/profile" element={<Profile />} />
         
         </Routes>
       </BrowserRouter>
